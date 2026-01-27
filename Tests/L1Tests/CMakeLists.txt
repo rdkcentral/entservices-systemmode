@@ -25,6 +25,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(${NAMESPACE}Plugins REQUIRED)
 
+set (TEST_SRC
+
+)
+
 set (TEST_LIB
     ${NAMESPACE}Plugins::${NAMESPACE}Plugins
 )
@@ -98,10 +102,13 @@ macro(add_plugin_test plugin_name test_files)
     add_plugin_test_ex(${plugin_opt} "${test_files}" "../../${plugin_name}" "${NAMESPACE}${plugin_name}")
 endmacro()
 
+add_library(${MODULE_NAME} SHARED ${TEST_SRC})
+
 include_directories(${TEST_INC})
 
 target_link_directories(${MODULE_NAME} PUBLIC ${CMAKE_INSTALL_PREFIX}/lib ${CMAKE_INSTALL_PREFIX}/lib/wpeframework/plugins)
 
+target_link_libraries(${MODULE_NAME} ${TEST_LIB})
 
 target_include_directories(${MODULE_NAME}
         PUBLIC
@@ -113,6 +120,9 @@ target_include_directories(${MODULE_NAME}
         ${CMAKE_SOURCE_DIR}/../Thunder/Source/plugins
         )
 
+#install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 
+install(TARGETS ${MODULE_NAME} DESTINATION lib)
+write_config(${PLUGIN_NAME})
 
 
