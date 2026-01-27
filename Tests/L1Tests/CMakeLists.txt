@@ -113,9 +113,6 @@ target_include_directories(${MODULE_NAME}
         ${CMAKE_SOURCE_DIR}/../Thunder/Source/plugins
         )
 
-#install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 
-install(TARGETS ${MODULE_NAME} DESTINATION lib)
-write_config(${PLUGIN_NAME})
 
 
