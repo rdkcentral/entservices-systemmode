@@ -61,18 +61,6 @@ include(GNUInstallDirs)
 # List to hold dynamically added targets
 set(TEST_TARGETS)
 
-if (FRAMERATETESTAPP)
-    message(STATUS "Framerate test application is enabled.")
-    set(FRAMERATE_EXECUTABLE_NAME "${TESTBINPREFIX}FrameRateTest")
-    add_executable(${FRAMERATE_EXECUTABLE_NAME} entServicesCOMRPC-FrameRateTest.cpp)
-    target_compile_definitions(${FRAMERATE_EXECUTABLE_NAME} PUBLIC MODULE_NAME=${FRAMERATE_EXECUTABLE_NAME})
-    target_include_directories(${FRAMERATE_EXECUTABLE_NAME} PRIVATE ${COMMON_INCLUDE_DIRS})
-    target_link_libraries(${FRAMERATE_EXECUTABLE_NAME} PRIVATE ${COMMON_LIBRARIES})
-    list(APPEND TEST_TARGETS ${FRAMERATE_EXECUTABLE_NAME})
-else()
-    message(STATUS "Framerate test application is disabled.")
-endif()
-
 # Install dynamically added targets
 if (TEST_TARGETS)
     install(TARGETS ${TEST_TARGETS} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
