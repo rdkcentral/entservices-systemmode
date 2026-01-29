@@ -14,7 +14,7 @@ jobs:
     with:
       caller_source: local
     secrets:
-      RDKCM_RDKE: ${{ secrets.RDKCM_RDKE }} 
+      RDKCM_RDKE: ${{ secrets.RDKCM_RDKE }}
   
   trigger-L2:
     uses: ./.github/workflows/L2-tests.yml
