@@ -88,11 +88,11 @@ jobs:
           path: ThunderTools
           ref: R4.4.3
       
-      - name: Checkout entservices-deviceanddisplay
+      - name: Checkout entservices-powermanager
         uses: actions/checkout@v3
         with:
-          repository: rdkcentral/entservices-deviceanddisplay
-          path: entservices-deviceanddisplay
+          repository: rdkcentral/entservices-powermanager
+          path: entservices-powermanager
           ref: develop
          
       - name: Checkout entservices-systemmode
@@ -319,11 +319,11 @@ jobs:
           &&
           cmake --install build/mocks
           
-      - name: Build entservices-deviceanddisplay
+      - name: Build entservices-powermanager
         run: >
           cmake
-          -S "$GITHUB_WORKSPACE/entservices-deviceanddisplay"
-          -B build/entservices-deviceanddisplay
+          -S "$GITHUB_WORKSPACE/entservices-powermanager"
+          -B build/entservices-powermanager
           -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}"
           -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr"
           -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
@@ -391,9 +391,9 @@ jobs:
           -DDS_FOUND=ON
           -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           &&
-          cmake --build build/entservices-deviceanddisplay -j8
+          cmake --build build/entservices-powermanager -j8
           &&
-          cmake --install build/entservices-deviceanddisplay
+          cmake --install build/entservices-powermanager
           
       - name: Build entservices-systemmode
         run: >
