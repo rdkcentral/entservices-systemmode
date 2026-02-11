@@ -5,11 +5,11 @@ set -e
 GITHUB_WORKSPACE="${PWD}"
 ls -la ${GITHUB_WORKSPACE}
 ############################
-# Build entservices-deviceanddisplay
-echo "buliding entservices-deviceanddisplay"
+# Build entservices-systemmode
+echo "building entservices-systemmode"
 
 cd ${GITHUB_WORKSPACE}
-cmake -G Ninja -S "$GITHUB_WORKSPACE" -B build/entservices-deviceanddisplay \
+cmake -G Ninja -S "$GITHUB_WORKSPACE" -B build/entservices-systemmode \
 -DUSE_THUNDER_R4=ON \
 -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr" \
 -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake" \
@@ -21,17 +21,9 @@ cmake -G Ninja -S "$GITHUB_WORKSPACE" -B build/entservices-deviceanddisplay \
 -DCMAKE_DISABLE_FIND_PACKAGE_RBus=ON \
 -DCOMCAST_CONFIG=OFF \
 -DRDK_SERVICES_COVERITY=ON \
--DRDK_SERVICES_L1_TEST=ON \
+-DRDK_SERVICES_L1_TEST=OFF \
 -DDS_FOUND=ON \
--DPLUGIN_POWERMANAGER=ON \
--DPLUGIN_DEVICEINFO=ON \
 -DPLUGIN_SYSTEMMODE=ON \
--DPLUGIN_WAREHOUSE=ON \
--DPLUGIN_DISPLAYINFO=ON \
--DPLUGIN_USERPREFERENCES=ON \
--DPLUGIN_DEVICEDIAGNOSTICS=ON \
--DPLUGIN_FRAMERATE=ON \
--DPLUGIN_SYSTEMSERVICES=ON \
 -DCMAKE_CXX_FLAGS="-DEXCEPTIONS_ENABLE=ON \
 -I ${GITHUB_WORKSPACE}/entservices-testframework/Tests/headers \
 -I ${GITHUB_WORKSPACE}/entservices-testframework/Tests/headers/audiocapturemgr \
@@ -58,12 +50,10 @@ cmake -G Ninja -S "$GITHUB_WORKSPACE" -B build/entservices-deviceanddisplay \
 -include ${GITHUB_WORKSPACE}/entservices-testframework/Tests/mocks/readprocMockInterface.h \
 -Wall -Werror -Wno-error=format \
 -Wl,-wrap,system -Wl,-wrap,popen -Wl,-wrap,syslog \
--DENABLE_TELEMETRY_LOGGING -DUSE_IARMBUS \
--DENABLE_SYSTEM_GET_STORE_DEMO_LINK -DENABLE_DEEP_SLEEP \
--DENABLE_SET_WAKEUP_SRC_CONFIG -DENABLE_THERMAL_PROTECTION \
--DUSE_DRM_SCREENCAPTURE -DHAS_API_SYSTEM -DHAS_API_POWERSTATE \
--DHAS_RBUS -DDISABLE_SECURITY_TOKEN -DENABLE_DEVICE_MANUFACTURER_INFO -DUSE_THUNDER_R4=ON -DTHUNDER_VERSION=4 -DTHUNDER_VERSION_MAJOR=4 -DTHUNDER_VERSION_MINOR=4" \
+-DENABLE_TELEMETRY_LOGGING \
+-DUSE_DRM_SCREENCAPTURE -DHAS_API_SYSTEM \
+-DHAS_RBUS -DDISABLE_SECURITY_TOKEN -DUSE_THUNDER_R4=ON -DTHUNDER_VERSION=4 -DTHUNDER_VERSION_MAJOR=4 -DTHUNDER_VERSION_MINOR=4" \
 
-cmake --build build/entservices-deviceanddisplay --target install
+cmake --build build/entservices-systemmode --target install
 echo "======================================================================================"
 exit 0
