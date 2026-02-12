@@ -139,7 +139,7 @@ jobs:
         with:
           repository: rdkcentral/entservices-systemmode
           path: entservices-systemmode
-          ref: feature/RDKEMW-12942
+          ref: develop
 
       - name: Checkout googletest
         if: steps.cache.outputs.cache-hit != 'true'
