@@ -135,6 +135,7 @@ SystemModeImplementation::~SystemModeImplementation()
     }
 
     LOGINFO("Disconnect from the COM-RPC socket\n");
+	printf("Test coverity flow: %s\n");
     // Disconnect from the COM-RPC socket
     _communicatorClient->Close(RPC::CommunicationTimeOut);
     if (_communicatorClient.IsValid())
