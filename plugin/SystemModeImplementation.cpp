@@ -17,7 +17,6 @@
 * limitations under the License.
 */
 
-
 #include "SystemModeImplementation.h"
 #include <sys/prctl.h>
 #include "UtilsJsonRpc.h"
