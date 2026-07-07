@@ -251,34 +251,41 @@ Core::hresult SystemModeImplementation::GetState(const SystemMode pSystemMode, G
 
 Core::hresult SystemModeImplementation::ClientActivated(const string& callsign , const string& systemMode)
 {
+	printf("Ram-Test-Debug-Remove: SystemMode ClientActivated ENTRY - callsign=%s, systemMode=%s\n", callsign.c_str(), systemMode.c_str());
 	SystemMode pSystemMode ;
 	auto it = SystemModeInterfaceMap.find(systemMode);
 
 	if (it != SystemModeInterfaceMap.end()) {
 		pSystemMode = it->second;
+		printf("Ram-Test-Debug-Remove: SystemMode found systemMode in map, pSystemMode=%d\n", pSystemMode);
 	} else {
 		LOGERR("Invalid  systemMode %s",systemMode.c_str());
+		printf("Ram-Test-Debug-Remove: SystemMode INVALID systemMode %s\n", systemMode.c_str());
 		return 0;
 	}
 
 	if (callsign != "")
 	{
+		printf("Ram-Test-Debug-Remove: SystemMode callsign is not empty, proceeding\n");
 		
 		if (_controller)
                 {
                         _controller->Release();
                         _controller = nullptr;
                 }
-		
+		printf("Ram-Test-Debug-Remove: SystemMode opening controller for callsign=%s\n", callsign.c_str());
 		_controller = _communicatorClient->Open<PluginHost::IShell>(_T(callsign), ~0, 3000);
+		printf("Ram-Test-Debug-Remove: SystemMode _controller=%p\n", (void*)_controller);
 
 		if (_controller)
 		{
+			printf("Ram-Test-Debug-Remove: SystemMode _controller is valid, switching on pSystemMode=%d\n", pSystemMode);
 			switch (pSystemMode) {
 				case DEVICE_OPTIMIZE:{
-
+							     printf("Ram-Test-Debug-Remove: SystemMode DEVICE_OPTIMIZE case, querying IDeviceOptimizeStateActivator\n");
 							     Exchange::IDeviceOptimizeStateActivator  *deviceOptimizeStateActivator (_controller->QueryInterface<Exchange::IDeviceOptimizeStateActivator>());
 
+							     printf("Ram-Test-Debug-Remove: SystemMode deviceOptimizeStateActivator=%p\n", (void*)deviceOptimizeStateActivator);
 							     if (deviceOptimizeStateActivator != nullptr) {
 								     _adminLock.Lock();
 
@@ -287,9 +294,11 @@ Core::hresult SystemModeImplementation::ClientActivated(const string& callsign ,
 								     {
 
 									     //Insert _clients detail directly to map .even some junk value is there for callsign it will be replaced by new entry
-									     _clients.insert({callsign,deviceOptimizeStateActivator});
-									     Utils::String::updateSystemModeFile( SystemModeMap[pSystemMode], "callsign", callsign,"add") ;
-									     TRACE(Trace::Information, (_T("%s plugin is add to deviceOptimizeStateActivator map"), callsign.c_str()));
+								     printf("Ram-Test-Debug-Remove: SystemMode inserting client to map, callsign=%s\n", callsign.c_str());
+								     _clients.insert({callsign,deviceOptimizeStateActivator});
+								     printf("Ram-Test-Debug-Remove: SystemMode calling updateSystemModeFile with mode=%s, callsign=%s\n", SystemModeMap[pSystemMode].c_str(), callsign.c_str());
+								     Utils::String::updateSystemModeFile( SystemModeMap[pSystemMode], "callsign", callsign,"add") ;
+								     printf("Ram-Test-Debug-Remove: SystemMode updateSystemModeFile completed\n");
 
 									     //If For Ex The plugins P1,P2,P3 who implement IDeviceOptimizeStateActivator . P1 ,P2 only activated . P3 is not in activated state .If org.rdk.SystemMode.RequestState (DeviceOptimize,GAME) is called then SystemMode trigger  P1.Request() and P2.Request() . After 5 min if P3 come to activate state , then SystemMode need to trigger P3. Request()i
 									     if(stateRequested) 
@@ -307,23 +316,31 @@ Core::hresult SystemModeImplementation::ClientActivated(const string& callsign ,
 
 								     _adminLock.Unlock();
 
+							     } else {
+								     printf("Ram-Test-Debug-Remove: SystemMode deviceOptimizeStateActivator is NULL\n");
 							     }
 							     break;
 						     }
 				default:
 						     {
 							     LOGERR("Invalid systemMode %d",pSystemMode);
+							     printf("Ram-Test-Debug-Remove: SystemMode default case hit, pSystemMode=%d\n", pSystemMode);
 							     break;
 						     }					     
 			}
 
+		} else {
+			printf("Ram-Test-Debug-Remove: SystemMode _controller is NULL\n");
 		}
 		if (_controller)
                 {
                         _controller->Release();
                         _controller = nullptr;
                 }
+	} else {
+		printf("Ram-Test-Debug-Remove: SystemMode callsign is EMPTY\n");
 	}
+	printf("Ram-Test-Debug-Remove: SystemMode ClientActivated EXIT\n");
 	return 0;	
 }
 Core::hresult SystemModeImplementation::ClientDeactivated(const string& callsign ,const string& systemMode)
