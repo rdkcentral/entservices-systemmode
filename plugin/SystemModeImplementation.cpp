@@ -38,6 +38,7 @@ SystemModeImplementation::SystemModeImplementation()
 , _engine(Core::ProxyType<RPC::InvokeServerType<1, 0, 4>>::Create())
 , _communicatorClient(Core::ProxyType<RPC::CommunicatorClient>::Create(Core::NodeId("/tmp/communicator"), Core::ProxyType<Core::IIPCServer>(_engine)))
 , _controller(nullptr)
+, _pluginNotification(*this)
 ,stateRequested(false)	
 {
     LOGINFO("Create SystemModeImplementation Instance");
@@ -362,6 +363,73 @@ Core::hresult SystemModeImplementation::ClientDeactivated(const string& callsign
 	_adminLock.Unlock();
 	return 0;
 }
+// Approach 1: Plugin State Notification Callbacks
+void SystemModeImplementation::OnPluginActivated(const string& callsign, PluginHost::IShell* shell)
+{
+    LOGINFO("Plugin activated: %s - checking for IDeviceOptimizeStateActivator interface", callsign.c_str());
+    
+    if (shell == nullptr) {
+        LOGWARN("OnPluginActivated: shell is nullptr for callsign %s", callsign.c_str());
+        return;
+    }
+    
+    // Query the activated plugin for IDeviceOptimizeStateActivator interface
+    auto deviceOptimize = shell->QueryInterface<Exchange::IDeviceOptimizeStateActivator>();
+    
+    if (deviceOptimize != nullptr) {
+        // This plugin IS a DeviceOptimize client - register it
+        LOGINFO("Plugin %s implements IDeviceOptimizeStateActivator - registering", callsign.c_str());
+        
+        _adminLock.Lock();
+        
+        // Add to client map
+        _clients[callsign] = deviceOptimize;
+        
+        // Update persistence file
+        Utils::String::updateSystemModeFile("DEVICE_OPTIMIZE", "callsign", callsign, "add");
+        
+        // If state was already requested, notify the newly activated client
+        if (stateRequested) {
+            GetStateResult successResult;
+            if (GetState(DEVICE_OPTIMIZE, successResult) == Core::ERROR_NONE) {
+                std::string state_str = deviceOptimizeStateMap[successResult.state];
+                LOGINFO("Notifying newly activated plugin %s of current state: %s", 
+                        callsign.c_str(), state_str.c_str());
+                deviceOptimize->Request(state_str);
+            }
+        }
+        
+        _adminLock.Unlock();
+        
+        LOGINFO("Plugin %s successfully registered as DeviceOptimize client", callsign.c_str());
+    } else {
+        // Plugin doesn't implement the interface - ignore
+        LOGINFO("Plugin %s does not implement IDeviceOptimizeStateActivator - ignoring", callsign.c_str());
+    }
+}
 
+void SystemModeImplementation::OnPluginDeactivated(const string& callsign)
+{
+    LOGINFO("Plugin deactivated: %s - checking if it's a client", callsign.c_str());
+    
+    _adminLock.Lock();
+    
+    auto it = _clients.find(callsign);
+    if (it != _clients.end()) {
+        // Plugin was a client - remove it
+        LOGINFO("Removing deactivated plugin %s from DeviceOptimize clients", callsign.c_str());
+        
+        it->second->Release();
+        _clients.erase(it);
+        
+        Utils::String::updateSystemModeFile("DEVICE_OPTIMIZE", "callsign", callsign, "delete");
+        
+        LOGINFO("Plugin %s successfully removed from clients", callsign.c_str());
+    } else {
+        LOGINFO("Plugin %s was not a DeviceOptimize client - no action needed", callsign.c_str());
+    }
+    
+    _adminLock.Unlock();
+}
 } // namespace Plugin
 } // namespace WPEFramework

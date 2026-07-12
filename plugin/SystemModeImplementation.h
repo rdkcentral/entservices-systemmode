@@ -61,6 +61,45 @@ namespace Plugin {
 	virtual Core::hresult ClientDeactivated(const string& callsign, const string& systemMode) override ;
 
     private:
+        // Approach 1: Plugin State Notification
+        class PluginStateNotification : public PluginHost::IPlugin::INotification {
+        public:
+            explicit PluginStateNotification(SystemModeImplementation& parent) 
+                : _parent(parent) {}
+            
+            PluginStateNotification() = delete;
+            PluginStateNotification(const PluginStateNotification&) = delete;
+            PluginStateNotification& operator=(const PluginStateNotification&) = delete;
+            
+            ~PluginStateNotification() override = default;
+            
+            void Activated(const string& callsign, PluginHost::IShell* shell) override {
+                _parent.OnPluginActivated(callsign, shell);
+            }
+            
+            void Deactivated(const string& callsign, PluginHost::IShell* shell) override {
+                _parent.OnPluginDeactivated(callsign);
+            }
+            
+            void Unavailable(const string& callsign, PluginHost::IShell* shell) override {
+                // Plugin unavailable - no action needed
+            }
+            
+            BEGIN_INTERFACE_MAP(PluginStateNotification)
+                INTERFACE_ENTRY(PluginHost::IPlugin::INotification)
+            END_INTERFACE_MAP
+            
+        private:
+            SystemModeImplementation& _parent;
+        };
+        
+        friend class PluginStateNotification;
+        Core::Sink<PluginStateNotification> _pluginNotification;
+        
+        void OnPluginActivated(const string& callsign, PluginHost::IShell* shell);
+        void OnPluginDeactivated(const string& callsign);
+
+    private:
         mutable Core::CriticalSection _adminLock;
 	std::map<const string, Exchange::IDeviceOptimizeStateActivator*> _clients;
 	Core::ProxyType<RPC::InvokeServerType<1, 0, 4>> _engine;
