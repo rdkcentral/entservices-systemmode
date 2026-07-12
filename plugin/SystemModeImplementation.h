@@ -94,6 +94,7 @@ namespace Plugin {
         };
         
         friend class PluginStateNotification;
+        friend class SystemMode;  // Allow SystemMode to access _pluginNotification for registration
         Core::Sink<PluginStateNotification> _pluginNotification;
         
         void OnPluginActivated(const string& callsign, PluginHost::IShell* shell);
