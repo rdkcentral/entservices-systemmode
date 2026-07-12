@@ -34,11 +34,11 @@ namespace Plugin {
 SERVICE_REGISTRATION(SystemModeImplementation, 1, 0);
 
 SystemModeImplementation::SystemModeImplementation()
-: _adminLock()
+: _pluginNotification(*this)
+, _adminLock()
 , _engine(Core::ProxyType<RPC::InvokeServerType<1, 0, 4>>::Create())
 , _communicatorClient(Core::ProxyType<RPC::CommunicatorClient>::Create(Core::NodeId("/tmp/communicator"), Core::ProxyType<Core::IIPCServer>(_engine)))
 , _controller(nullptr)
-, _pluginNotification(*this)
 ,stateRequested(false)	
 {
     LOGINFO("Create SystemModeImplementation Instance");
