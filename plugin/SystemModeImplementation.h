@@ -64,7 +64,6 @@ namespace Plugin {
 	virtual Core::hresult ClientDeactivated(const string& callsign, const string& systemMode) override ;
 
     private:
-        // Approach 1: Plugin State Notification
         class PluginStateNotification : public PluginHost::IPlugin::INotification {
         public:
             explicit PluginStateNotification(SystemModeImplementation& parent) 

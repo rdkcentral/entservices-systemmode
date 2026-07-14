@@ -363,10 +363,10 @@ Core::hresult SystemModeImplementation::ClientDeactivated(const string& callsign
 	_adminLock.Unlock();
 	return 0;
 }
-// Approach 1: Plugin State Notification Callbacks
+
 void SystemModeImplementation::OnPluginActivated(const string& callsign, PluginHost::IShell* shell)
 {
-    LOGINFO("Plugin activated: %s - checking for IDeviceOptimizeStateActivator interface", callsign.c_str());
+    LOGDBG("Plugin activated: %s - checking for IDeviceOptimizeStateActivator interface", callsign.c_str());
     
     if (shell == nullptr) {
         LOGWARN("OnPluginActivated: shell is nullptr for callsign %s", callsign.c_str());
@@ -377,7 +377,6 @@ void SystemModeImplementation::OnPluginActivated(const string& callsign, PluginH
     auto deviceOptimize = shell->QueryInterface<Exchange::IDeviceOptimizeStateActivator>();
     
     if (deviceOptimize != nullptr) {
-        // This plugin IS a DeviceOptimize client - register it
         LOGINFO("Plugin %s implements IDeviceOptimizeStateActivator - registering", callsign.c_str());
         
         _adminLock.Lock();
@@ -388,7 +387,6 @@ void SystemModeImplementation::OnPluginActivated(const string& callsign, PluginH
         // Update persistence file
         Utils::String::updateSystemModeFile("DEVICE_OPTIMIZE", "callsign", callsign, "add");
         
-        // If state was already requested, notify the newly activated client
         if (stateRequested) {
             GetStateResult successResult;
             if (GetState(DEVICE_OPTIMIZE, successResult) == Core::ERROR_NONE) {
@@ -403,20 +401,18 @@ void SystemModeImplementation::OnPluginActivated(const string& callsign, PluginH
         
         LOGINFO("Plugin %s successfully registered as DeviceOptimize client", callsign.c_str());
     } else {
-        // Plugin doesn't implement the interface - ignore
-        LOGINFO("Plugin %s does not implement IDeviceOptimizeStateActivator - ignoring", callsign.c_str());
+        LOGDBG("Plugin %s does not implement IDeviceOptimizeStateActivator - ignoring", callsign.c_str());
     }
 }
 
 void SystemModeImplementation::OnPluginDeactivated(const string& callsign)
 {
-    LOGINFO("Plugin deactivated: %s - checking if it's a client", callsign.c_str());
+    LOGDBG("Plugin deactivated: %s - checking if it's a client", callsign.c_str());
     
     _adminLock.Lock();
     
     auto it = _clients.find(callsign);
     if (it != _clients.end()) {
-        // Plugin was a client - remove it
         LOGINFO("Removing deactivated plugin %s from DeviceOptimize clients", callsign.c_str());
         
         it->second->Release();
@@ -426,7 +422,7 @@ void SystemModeImplementation::OnPluginDeactivated(const string& callsign)
         
         LOGINFO("Plugin %s successfully removed from clients", callsign.c_str());
     } else {
-        LOGINFO("Plugin %s was not a DeviceOptimize client - no action needed", callsign.c_str());
+        LOGDBG("Plugin %s was not a DeviceOptimize client - no action needed", callsign.c_str());
     }
     
     _adminLock.Unlock();

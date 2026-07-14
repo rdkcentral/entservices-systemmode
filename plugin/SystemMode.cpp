@@ -78,8 +78,6 @@ namespace WPEFramework
         {
             Exchange::JSystemMode::Register(*this, _systemMode);
             
-            // Approach 1: Register for ALL plugin state notifications
-            // This allows SystemMode to automatically discover client plugins
             SYSLOG(Logging::Startup, (_T("SystemMode::Initialize: Registering for plugin state notifications")));
             service->Register(&(static_cast<SystemModeImplementation*>(_systemMode)->_pluginNotification));
         }
@@ -105,7 +103,6 @@ namespace WPEFramework
 
         if (nullptr != _systemMode)
         {
-            // Approach 1: Unregister plugin state notifications
             SYSLOG(Logging::Shutdown, (_T("SystemMode::Deinitialize: Unregistering plugin state notifications")));
             service->Unregister(&(static_cast<SystemModeImplementation*>(_systemMode)->_pluginNotification));
             
