@@ -36,8 +36,6 @@
 
 namespace WPEFramework {
 namespace Plugin {
-    // Forward declaration for friend access
-    class SystemMode;
 
     class SystemModeImplementation : public Exchange::ISystemMode{
 
