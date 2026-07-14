@@ -34,8 +34,7 @@ namespace Plugin {
 SERVICE_REGISTRATION(SystemModeImplementation, 1, 0);
 
 SystemModeImplementation::SystemModeImplementation()
-: _pluginNotification(*this)
-, _adminLock()
+: _adminLock()
 , _engine(Core::ProxyType<RPC::InvokeServerType<1, 0, 4>>::Create())
 , _communicatorClient(Core::ProxyType<RPC::CommunicatorClient>::Create(Core::NodeId("/tmp/communicator"), Core::ProxyType<Core::IIPCServer>(_engine)))
 , _controller(nullptr)
@@ -281,32 +280,51 @@ Core::hresult SystemModeImplementation::ClientActivated(const string& callsign ,
 							     Exchange::IDeviceOptimizeStateActivator  *deviceOptimizeStateActivator (_controller->QueryInterface<Exchange::IDeviceOptimizeStateActivator>());
 
 							     if (deviceOptimizeStateActivator != nullptr) {
+								     Exchange::IDeviceOptimizeStateActivator* oldEntry = nullptr;
+								     bool notifyState = false;
+								     std::string state_str;
+								     
 								     _adminLock.Lock();
 
+								     // Check if entry already exists
 								     std::map<const string, Exchange::IDeviceOptimizeStateActivator*>::iterator index(_clients.find(callsign));
+								     if (index != _clients.end()) {
+									     // Save old entry for Release() outside lock
+									     oldEntry = index->second;
+									     _clients.erase(index);
+								     }
 
+								     // Insert new entry
+								     _clients.insert({callsign, deviceOptimizeStateActivator});
+								     Utils::String::updateSystemModeFile( SystemModeMap[pSystemMode], "callsign", callsign,"add") ;
+								     TRACE(Trace::Information, (_T("%s plugin is add to deviceOptimizeStateActivator map"), callsign.c_str()));
+
+								     // Check if we need to notify about current state
+								     if(stateRequested) 
 								     {
-
-									     //Insert _clients detail directly to map .even some junk value is there for callsign it will be replaced by new entry
-									     _clients.insert({callsign,deviceOptimizeStateActivator});
-									     Utils::String::updateSystemModeFile( SystemModeMap[pSystemMode], "callsign", callsign,"add") ;
-									     TRACE(Trace::Information, (_T("%s plugin is add to deviceOptimizeStateActivator map"), callsign.c_str()));
-
-									     //If For Ex The plugins P1,P2,P3 who implement IDeviceOptimizeStateActivator . P1 ,P2 only activated . P3 is not in activated state .If org.rdk.SystemMode.RequestState (DeviceOptimize,GAME) is called then SystemMode trigger  P1.Request() and P2.Request() . After 5 min if P3 come to activate state , then SystemMode need to trigger P3. Request()i
-									     if(stateRequested) 
+									     State state;
+									     GetStateResult successResult;
+									     if(GetState(pSystemMode, successResult) == Core::ERROR_NONE)
 									     {
-										     State state ;
-										     GetStateResult successResult;
-										     if(GetState(pSystemMode, successResult ) == Core::ERROR_NONE)
-										     {
-											     state = successResult.state;
-											     std::string state_str = deviceOptimizeStateMap[state];
-											     deviceOptimizeStateActivator->Request(state_str) ;
-										     }
+										     state = successResult.state;
+										     state_str = deviceOptimizeStateMap[state];
+										     notifyState = true;
+										     deviceOptimizeStateActivator->AddRef();  // Keep alive outside lock
 									     }
 								     }
 
 								     _adminLock.Unlock();
+								     
+								     // Release old entry outside lock (avoid holding lock during Release)
+								     if (oldEntry != nullptr) {
+									     oldEntry->Release();
+								     }
+								     
+								     // Call Request() outside lock (avoid deadlock risk)
+								     if (notifyState) {
+									     deviceOptimizeStateActivator->Request(state_str);
+									     deviceOptimizeStateActivator->Release();  // Release AddRef from above
+								     }
 
 							     }
 							     break;
@@ -362,70 +380,6 @@ Core::hresult SystemModeImplementation::ClientDeactivated(const string& callsign
 	}
 	_adminLock.Unlock();
 	return 0;
-}
-
-void SystemModeImplementation::OnPluginActivated(const string& callsign, PluginHost::IShell* shell)
-{
-    LOGDBG("Plugin activated: %s - checking for IDeviceOptimizeStateActivator interface", callsign.c_str());
-    
-    if (shell == nullptr) {
-        LOGWARN("OnPluginActivated: shell is nullptr for callsign %s", callsign.c_str());
-        return;
-    }
-    
-    // Query the activated plugin for IDeviceOptimizeStateActivator interface
-    auto deviceOptimize = shell->QueryInterface<Exchange::IDeviceOptimizeStateActivator>();
-    
-    if (deviceOptimize != nullptr) {
-        LOGINFO("Plugin %s implements IDeviceOptimizeStateActivator - registering", callsign.c_str());
-        
-        _adminLock.Lock();
-        
-        // Add to client map
-        _clients[callsign] = deviceOptimize;
-        
-        // Update persistence file
-        Utils::String::updateSystemModeFile("DEVICE_OPTIMIZE", "callsign", callsign, "add");
-        
-        if (stateRequested) {
-            GetStateResult successResult;
-            if (GetState(DEVICE_OPTIMIZE, successResult) == Core::ERROR_NONE) {
-                std::string state_str = deviceOptimizeStateMap[successResult.state];
-                LOGINFO("Notifying newly activated plugin %s of current state: %s", 
-                        callsign.c_str(), state_str.c_str());
-                deviceOptimize->Request(state_str);
-            }
-        }
-        
-        _adminLock.Unlock();
-        
-        LOGINFO("Plugin %s successfully registered as DeviceOptimize client", callsign.c_str());
-    } else {
-        LOGDBG("Plugin %s does not implement IDeviceOptimizeStateActivator - ignoring", callsign.c_str());
-    }
-}
-
-void SystemModeImplementation::OnPluginDeactivated(const string& callsign)
-{
-    LOGDBG("Plugin deactivated: %s - checking if it's a client", callsign.c_str());
-    
-    _adminLock.Lock();
-    
-    auto it = _clients.find(callsign);
-    if (it != _clients.end()) {
-        LOGINFO("Removing deactivated plugin %s from DeviceOptimize clients", callsign.c_str());
-        
-        it->second->Release();
-        _clients.erase(it);
-        
-        Utils::String::updateSystemModeFile("DEVICE_OPTIMIZE", "callsign", callsign, "delete");
-        
-        LOGINFO("Plugin %s successfully removed from clients", callsign.c_str());
-    } else {
-        LOGDBG("Plugin %s was not a DeviceOptimize client - no action needed", callsign.c_str());
-    }
-    
-    _adminLock.Unlock();
 }
 } // namespace Plugin
 } // namespace WPEFramework
