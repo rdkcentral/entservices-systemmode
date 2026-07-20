@@ -48,7 +48,11 @@ namespace WPEFramework
      **/
     SERVICE_REGISTRATION(SystemMode, API_VERSION_NUMBER_MAJOR, API_VERSION_NUMBER_MINOR, API_VERSION_NUMBER_PATCH);
 
-    SystemMode::SystemMode() : _service(nullptr), _connectionId(0), _systemMode(nullptr)
+    SystemMode::SystemMode()
+        : _service(nullptr)
+        , _connectionId(0)
+        , _systemMode(nullptr)
+        , _pluginNotification(*this)
     {
         SYSLOG(Logging::Startup, (_T("SystemMode Constructor")));
     }
@@ -76,6 +80,10 @@ namespace WPEFramework
         if(nullptr != _systemMode)
         {
             Exchange::JSystemMode::Register(*this, _systemMode);
+            
+            // Register for plugin state notifications (in-process handler)
+            SYSLOG(Logging::Startup, (_T("SystemMode::Initialize: Registering for plugin state notifications")));
+            service->Register(&_pluginNotification);
         }
         else
         {
@@ -99,6 +107,10 @@ namespace WPEFramework
 
         if (nullptr != _systemMode)
         {
+            // Unregister plugin state notifications
+            SYSLOG(Logging::Shutdown, (_T("SystemMode::Deinitialize: Unregistering plugin state notifications")));
+            service->Unregister(&_pluginNotification);
+            
             Exchange::JSystemMode::Unregister(*this);
 
             // Stop processing:
@@ -137,6 +149,64 @@ namespace WPEFramework
         if (connection->Id() == _connectionId) {
             ASSERT(nullptr != _service);
             Core::IWorkerPool::Instance().Submit(PluginHost::IShell::Job::Create(_service, PluginHost::IShell::DEACTIVATED, PluginHost::IShell::FAILURE));
+        }
+    }
+
+    // PluginStateNotification implementation
+    void SystemMode::PluginStateNotification::Activated(const string& callsign, PluginHost::IShell* shell)
+    {
+        _parent.OnPluginActivated(callsign, shell);
+    }
+
+    void SystemMode::PluginStateNotification::Deactivated(const string& callsign, PluginHost::IShell* /* shell */)
+    {
+        _parent.OnPluginDeactivated(callsign);
+    }
+
+    void SystemMode::PluginStateNotification::Unavailable(const string& callsign, PluginHost::IShell* /* shell */)
+    {
+        // Plugin unavailable - no action needed
+    }
+
+    // Plugin lifecycle event handlers
+    void SystemMode::OnPluginActivated(const string& callsign, PluginHost::IShell* shell)
+    {
+        LOGDBG("Plugin activated: %s - checking for IDeviceOptimizeStateActivator interface", callsign.c_str());
+        
+        if (shell == nullptr) {
+            LOGWARN("OnPluginActivated: shell is nullptr for callsign %s", callsign.c_str());
+            return;
+        }
+        
+        // Query the activated plugin for IDeviceOptimizeStateActivator interface
+        auto deviceOptimize = shell->QueryInterface<Exchange::IDeviceOptimizeStateActivator>();
+        
+        if (deviceOptimize != nullptr) {
+            // Plugin implements the interface - register via RPC interface
+            LOGDBG("Plugin %s implements IDeviceOptimizeStateActivator - registering via ISystemMode", callsign.c_str());
+            
+            // Release our local reference - SystemModeImplementation will manage it
+            deviceOptimize->Release();
+            
+            // Use the RPC interface to register (works for in-process or out-of-process)
+            if (_systemMode != nullptr) {
+                _systemMode->ClientActivated(callsign, "DEVICE_OPTIMIZE");
+                LOGINFO("Plugin %s successfully registered as DeviceOptimize client", callsign.c_str());
+            }
+        } else {
+            // Plugin doesn't implement the interface - ignore
+            LOGDBG("Plugin %s does not implement IDeviceOptimizeStateActivator - ignoring", callsign.c_str());
+        }
+    }
+
+    void SystemMode::OnPluginDeactivated(const string& callsign)
+    {
+        LOGDBG("Plugin deactivated: %s - notifying SystemMode", callsign.c_str());
+        
+        // Use the RPC interface to deregister (works for in-process or out-of-process)
+        if (_systemMode != nullptr) {
+            _systemMode->ClientDeactivated(callsign, "DEVICE_OPTIMIZE");
+            LOGINFO("Plugin %s deactivation notification sent to SystemMode", callsign.c_str());
         }
     }
 
