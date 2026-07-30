@@ -280,32 +280,51 @@ Core::hresult SystemModeImplementation::ClientActivated(const string& callsign ,
 							     Exchange::IDeviceOptimizeStateActivator  *deviceOptimizeStateActivator (_controller->QueryInterface<Exchange::IDeviceOptimizeStateActivator>());
 
 							     if (deviceOptimizeStateActivator != nullptr) {
+								     Exchange::IDeviceOptimizeStateActivator* oldEntry = nullptr;
+								     bool notifyState = false;
+								     std::string state_str;
+								     
 								     _adminLock.Lock();
 
+								     // Check if entry already exists
 								     std::map<const string, Exchange::IDeviceOptimizeStateActivator*>::iterator index(_clients.find(callsign));
+								     if (index != _clients.end()) {
+									     // Save old entry for Release() outside lock
+									     oldEntry = index->second;
+									     _clients.erase(index);
+								     }
 
+								     // Insert new entry
+								     _clients.insert({callsign, deviceOptimizeStateActivator});
+								     Utils::String::updateSystemModeFile( SystemModeMap[pSystemMode], "callsign", callsign,"add") ;
+								     TRACE(Trace::Information, (_T("%s plugin is add to deviceOptimizeStateActivator map"), callsign.c_str()));
+
+								     // Check if we need to notify about current state
+								     if(stateRequested) 
 								     {
-
-									     //Insert _clients detail directly to map .even some junk value is there for callsign it will be replaced by new entry
-									     _clients.insert({callsign,deviceOptimizeStateActivator});
-									     Utils::String::updateSystemModeFile( SystemModeMap[pSystemMode], "callsign", callsign,"add") ;
-									     TRACE(Trace::Information, (_T("%s plugin is add to deviceOptimizeStateActivator map"), callsign.c_str()));
-
-									     //If For Ex The plugins P1,P2,P3 who implement IDeviceOptimizeStateActivator . P1 ,P2 only activated . P3 is not in activated state .If org.rdk.SystemMode.RequestState (DeviceOptimize,GAME) is called then SystemMode trigger  P1.Request() and P2.Request() . After 5 min if P3 come to activate state , then SystemMode need to trigger P3. Request()i
-									     if(stateRequested) 
+									     State state;
+									     GetStateResult successResult;
+									     if(GetState(pSystemMode, successResult) == Core::ERROR_NONE)
 									     {
-										     State state ;
-										     GetStateResult successResult;
-										     if(GetState(pSystemMode, successResult ) == Core::ERROR_NONE)
-										     {
-											     state = successResult.state;
-											     std::string state_str = deviceOptimizeStateMap[state];
-											     deviceOptimizeStateActivator->Request(state_str) ;
-										     }
+										     state = successResult.state;
+										     state_str = deviceOptimizeStateMap[state];
+										     notifyState = true;
+										     deviceOptimizeStateActivator->AddRef();  // Keep alive outside lock
 									     }
 								     }
 
 								     _adminLock.Unlock();
+								     
+								     // Release old entry outside lock (avoid holding lock during Release)
+								     if (oldEntry != nullptr) {
+									     oldEntry->Release();
+								     }
+								     
+								     // Call Request() outside lock (avoid deadlock risk)
+								     if (notifyState) {
+									     deviceOptimizeStateActivator->Request(state_str);
+									     deviceOptimizeStateActivator->Release();  // Release AddRef from above
+								     }
 
 							     }
 							     break;
@@ -362,6 +381,5 @@ Core::hresult SystemModeImplementation::ClientDeactivated(const string& callsign
 	_adminLock.Unlock();
 	return 0;
 }
-
 } // namespace Plugin
 } // namespace WPEFramework
