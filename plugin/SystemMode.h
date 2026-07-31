@@ -58,10 +58,37 @@ namespace Plugin {
         private:
             void Deactivated(RPC::IRemoteConnection* connection);
 
+            // Plugin state notification handler (must be in-process)
+            class PluginStateNotification : public PluginHost::IPlugin::INotification {
+            public:
+                explicit PluginStateNotification(SystemMode& parent)
+                    : _parent(parent) {}
+                
+                PluginStateNotification() = delete;
+                PluginStateNotification(const PluginStateNotification&) = delete;
+                PluginStateNotification& operator=(const PluginStateNotification&) = delete;
+                ~PluginStateNotification() override = default;
+                
+                void Activated(const string& callsign, PluginHost::IShell* shell) override;
+                void Deactivated(const string& callsign, PluginHost::IShell* /* shell */) override;
+                void Unavailable(const string& callsign, PluginHost::IShell* /* shell */) override;
+                
+                BEGIN_INTERFACE_MAP(PluginStateNotification)
+                    INTERFACE_ENTRY(PluginHost::IPlugin::INotification)
+                END_INTERFACE_MAP
+                
+            private:
+                SystemMode& _parent;
+            };
+            
+            void OnPluginActivated(const string& callsign, PluginHost::IShell* shell);
+            void OnPluginDeactivated(const string& callsign);
+
         private:
             PluginHost::IShell* _service{};
             uint32_t _connectionId{};
             Exchange::ISystemMode* _systemMode{};
+            Core::Sink<PluginStateNotification> _pluginNotification;
     };
 
 } // namespace Plugin

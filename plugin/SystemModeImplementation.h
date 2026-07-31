@@ -36,6 +36,7 @@
 
 namespace WPEFramework {
 namespace Plugin {
+
     class SystemModeImplementation : public Exchange::ISystemMode{
 
     public:
