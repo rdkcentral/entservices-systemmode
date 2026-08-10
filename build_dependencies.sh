@@ -33,23 +33,23 @@ apt update
 apt install -y libcurl4-openssl-dev valgrind lcov clang libsystemd-dev libboost-all-dev libwebsocketpp-dev meson curl libunwind-dev libdrm-dev
 pip install jsonref
 
-git clone -b R4_4-RDK https://github.com/rdkcentral/ThunderTools.git
+git clone --branch R4_4-RDK https://github.com/rdkcentral/ThunderTools.git
 cd ThunderTools
 git checkout $THUNDER_TOOLS_COMMIT_SHA
 cd ..
 
-git clone -b R4_4-RDK https://github.com/rdkcentral/Thunder.git
+git clone --branch R4_4-RDK https://github.com/rdkcentral/Thunder.git
 cd Thunder
 git checkout $THUNDER_COMMIT_SHA
 cd ..
 
-git clone --branch 4.0.8 https://github.com/rdkcentral/entservices-apis.git
+git clone --branch develop https://github.com/rdkcentral/entservices-apis.git
 
 cd ..
 git clone --branch develop https://github.com/rdkcentral/entservices-helpers.git
 cd "$GITHUB_WORKSPACE"
 
-git clone --branch develop https://github.com/rdkcentral/entservices-testframework.git
+git clone --branch 2.0.0 https://github.com/rdkcentral/entservices-testframework.git
 
 ############################
 # Build Thunder-Tools
