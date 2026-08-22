@@ -28,6 +28,7 @@
 
 #define SYSTEMMODE_NAMESPACE "SystemMode"
 
+
 namespace WPEFramework {
 namespace Plugin {
 
