@@ -104,7 +104,7 @@ The SystemMode plugin is a centralized system mode management service designed f
 - **Persistence Settings**: Configurable state storage location and format
 
 ### Integration Requirements
-- **Framework**: WPEFramework (Thunder) v4.0+
+- **Framework**: Thunder v4.0+
 - **Dependencies**: Standard C++11 compiler, Thunder plugin development kit
 - **Memory**: Minimal memory footprint (<1MB runtime usage)
 - **Storage**: Lightweight state file storage (<1KB per mode)

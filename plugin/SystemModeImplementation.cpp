@@ -28,7 +28,7 @@
 
 #define SYSTEMMODE_NAMESPACE "SystemMode"
 
-namespace WPEFramework {
+namespace Thunder {
 namespace Plugin {
 
 SERVICE_REGISTRATION(SystemModeImplementation, 1, 0);
@@ -382,4 +382,4 @@ Core::hresult SystemModeImplementation::ClientDeactivated(const string& callsign
 	return 0;
 }
 } // namespace Plugin
-} // namespace WPEFramework
+} // namespace Thunder

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The SystemMode plugin is a WPEFramework (Thunder) plugin designed to provide centralized system mode management and coordination across multiple device components. It enables dynamic system optimization by managing different operational modes and propagating state changes to registered client plugins.
+The SystemMode plugin is a Thunder plugin designed to provide centralized system mode management and coordination across multiple device components. It enables dynamic system optimization by managing different operational modes and propagating state changes to registered client plugins.
 
 ## System Architecture
 
@@ -10,7 +10,7 @@ The SystemMode plugin is a WPEFramework (Thunder) plugin designed to provide cen
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    WPEFramework (Thunder)                       │
+│                             Thunder                             │
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
 │  │   Client Plugin │  │   Client Plugin │  │   Client Plugin │  │
@@ -107,13 +107,13 @@ The SystemMode plugin is a WPEFramework (Thunder) plugin designed to provide cen
 ## Plugin Framework Integration
 
 ### Thunder Integration Points
-- **Plugin Loading**: Standard WPEFramework plugin lifecycle
+- **Plugin Loading**: Standard Thunder plugin lifecycle
 - **Service Discovery**: COM-RPC interface registration
 - **Communication**: Inter-plugin communication via Thunder infrastructure
 - **Configuration**: Standard Thunder configuration management
 
 ### Dependencies
-- **Framework**: WPEFramework/Thunder core
+- **Framework**: Thunder/Thunder core
 - **Utilities**: Custom utility helpers (UtilsString, UtilsLogging, UtilsJsonRpc, UtilsFile)
 - **Interfaces**: External interface definitions (Exchange::ISystemMode, IDeviceOptimizeStateActivator)
 

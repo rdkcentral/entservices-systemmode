@@ -43,9 +43,9 @@
 #define SYSTEM_MODE_FILE "/tmp/SystemMode.txt"
 
 using ::testing::NiceMock;
-using namespace WPEFramework;
+using namespace Thunder;
 using testing::StrictMock;
-using ::WPEFramework::Exchange::ISystemMode;
+using ::Thunder::Exchange::ISystemMode;
 
 namespace {
 static void removeFile(const char* fileName)

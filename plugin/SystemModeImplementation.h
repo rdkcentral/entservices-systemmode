@@ -34,7 +34,7 @@
 #define SYSTEM_MODE_COUNT 1 //Number of system mode define in Exchange::ISystemMode::SystemMode enum
 #define SYSTEM_MODE_FILE "/tmp/SystemMode.txt"
 
-namespace WPEFramework {
+namespace Thunder {
 namespace Plugin {
 
     class SystemModeImplementation : public Exchange::ISystemMode{
@@ -74,4 +74,4 @@ namespace Plugin {
 
     };
 } // namespace Plugin
-} // namespace WPEFramework
+} // namespace Thunder
