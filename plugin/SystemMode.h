@@ -88,7 +88,7 @@ namespace Plugin {
             PluginHost::IShell* _service{};
             uint32_t _connectionId{};
             Exchange::ISystemMode* _systemMode{};
-            Core::Sink<PluginStateNotification> _pluginNotification;
+            Core::SinkType<PluginStateNotification> _pluginNotification;
     };
 
 } // namespace Plugin
