@@ -117,7 +117,6 @@ namespace WPEFramework
             RPC::IRemoteConnection* connection = service->RemoteConnection(_connectionId);
             VARIABLE_IS_NOT_USED uint32_t result = _systemMode->Release();
 
-            _systemMode->Release();
             _systemMode = nullptr;
 	    ASSERT(result == Core::ERROR_DESTRUCTION_SUCCEEDED);
 
