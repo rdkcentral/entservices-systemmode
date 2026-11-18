@@ -17,13 +17,11 @@
  * limitations under the License.
  */
 
-#include "FrontPanelIndicatorMock.h"
 #include "L2Tests.h"
 #include "L2TestsMock.h"
 #include "MfrMock.h"
 #include "PowerManagerHalMock.h"
 #include "deepSleepMgr.h"
-#include "devicesettings.h"
 #include <chrono>
 #include <condition_variable>
 #include <fstream>
@@ -182,128 +180,6 @@ SystemMode_L2test::SystemMode_L2test()
                 *curState = (mfrTemperatureState_t)0;
                 *wifiTemperature = 25;
                 return mfrERR_NONE;
-            }));
-
-    // DisplaySettings Mocks
-    string videoPort(_T("HDMI0"));
-    string audioPort(_T("HDMI0"));
-
-    device::VideoOutputPort videoOutputPort;
-    device::VideoDevice videoDevice;
-    device::VideoResolution videoResolution;
-    device::VideoOutputPortType videoOutputPortType;
-    device::VideoDFC actualVideoDFC;
-    string videoDFCName(_T("FULL"));
-    string videoPortSupportedResolution(_T("1080p"));
-
-    ON_CALL(*p_hostImplMock, getDefaultVideoPortName())
-        .WillByDefault(::testing::Return(videoPort));
-    ON_CALL(*p_videoOutputPortConfigImplMock, getPort(::testing::_))
-        .WillByDefault(::testing::ReturnRef(videoOutputPort));
-    ON_CALL(*p_videoOutputPortMock, isDisplayConnected())
-        .WillByDefault(::testing::Return(true));
-
-    device::AudioOutputPort audioFormat;
-    ON_CALL(*p_hostImplMock, getCurrentAudioFormat(testing::_))
-        .WillByDefault(testing::Invoke(
-            [](dsAudioFormat_t audioFormat) {
-                audioFormat = dsAUDIO_FORMAT_NONE;
-                return 0;
-            }));
-
-    ON_CALL(*p_videoOutputPortMock, getDefaultResolution())
-        .WillByDefault(::testing::ReturnRef(videoResolution));
-
-    ON_CALL(*p_hostImplMock, getVideoOutputPort(::testing::_))
-        .WillByDefault(::testing::ReturnRef(videoOutputPort));
-
-    // ON_CALL(*p_videoOutputPortConfigImplMock, getPort(::testing::_))
-    //     .WillByDefault(::testing::ReturnRef(videoOutputPort));
-    ON_CALL(*p_videoOutputPortMock, isDisplayConnected())
-        .WillByDefault(::testing::Return(true));
-
-    ON_CALL(*p_videoOutputPortMock, getName())
-        .WillByDefault(::testing::ReturnRef(videoPort));
-
-    ON_CALL(*p_audioOutputPortMock, getName())
-        .WillByDefault(::testing::ReturnRef(audioPort));
-
-    ON_CALL(*p_videoOutputPortMock, getVideoEOTF())
-        .WillByDefault(::testing::Return(1));
-
-    ON_CALL(*p_hostImplMock, getVideoDevices())
-        .WillByDefault(::testing::Return(device::List<device::VideoDevice>({ videoDevice })));
-
-    ON_CALL(*p_videoDeviceMock, getHDRCapabilities(testing::_))
-        .WillByDefault([](int* capabilities) {
-            if (capabilities) {
-                *capabilities = dsHDRSTANDARD_TechnicolorPrime;
-            }
-        });
-
-    ON_CALL(*p_videoOutputPortMock, getColorDepthCapabilities(testing::_))
-        .WillByDefault(testing::Invoke(
-            [&](unsigned int* capabilities) {
-                *capabilities = dsDISPLAY_COLORDEPTH_8BIT;
-            }));
-
-    ON_CALL(*p_videoOutputPortMock, setResolution(testing::_, testing::_, testing::_))
-        .WillByDefault(testing::Invoke(
-            [&](std::string resolution, bool persist, bool isIgnoreEdid) {
-                printf("Inside setResolution Mock\n");
-                EXPECT_EQ(resolution, "1080p60");
-                EXPECT_EQ(persist, true);
-
-                std::cout << "Resolution: " << resolution
-                          << ", Persist: " << persist
-                          << ", Ignore EDID: " << isIgnoreEdid << std::endl;
-            }));
-
-    ON_CALL(*p_videoOutputPortMock, getCurrentOutputSettings(testing::_, testing::_, testing::_, testing::_, testing::_))
-        .WillByDefault([](int& videoEOTF, int& matrixCoefficients, int& colorSpace,
-                           int& colorDepth, int& quantizationRange) {
-            videoEOTF = 1; // example values
-            matrixCoefficients = 0;
-            colorSpace = 3;
-            colorDepth = 10;
-            quantizationRange = 4;
-
-            return true;
-        });
-
-    ON_CALL(*p_videoOutputPortConfigImplMock, getPortType(::testing::_))
-        .WillByDefault(::testing::ReturnRef(videoOutputPortType));
-    ON_CALL(*p_videoOutputPortMock, getType())
-        .WillByDefault(::testing::ReturnRef(videoOutputPortType));
-    ON_CALL(*p_videoOutputPortTypeMock, getId())
-        .WillByDefault(::testing::Return(0));
-    // device::VideoResolution videoResolution;
-    ON_CALL(*p_videoOutputPortTypeMock, getSupportedResolutions())
-        .WillByDefault(::testing::Return(device::List<device::VideoResolution>({ videoResolution })));
-    ON_CALL(*p_videoResolutionMock, getName())
-        .WillByDefault(::testing::ReturnRef(videoPortSupportedResolution));
-
-    ON_CALL(*p_videoOutputPortMock, setForceHDRMode(::testing::_))
-        .WillByDefault(::testing::Return(true));
-
-    ON_CALL(*p_videoOutputPortMock, getResolution())
-        .WillByDefault([]() -> const device::VideoResolution& {
-            static device::VideoResolution dynamicResolution;
-            return dynamicResolution;
-        });
-
-    ON_CALL(*p_videoDeviceMock, getDFC())
-        .WillByDefault(::testing::Invoke([&]() -> device::VideoDFC& {
-            return actualVideoDFC;
-        }));
-
-    ON_CALL(*p_videoDFCMock, getName())
-        .WillByDefault(::testing::ReturnRef(videoDFCName));
-
-    ON_CALL(*p_videoOutputPortMock, getTVHDRCapabilities(testing::_))
-        .WillByDefault(testing::Invoke(
-            [&](int* capabilities) {
-                *capabilities = dsHDRSTANDARD_HLG | dsHDRSTANDARD_HDR10;
             }));
 
     /* Activate plugin in constructor */
